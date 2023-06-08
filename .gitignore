@@ -1,2 +1,6 @@
 .idea/
 .DS_store
+data/
+__pycache__/
+pretrained_models/
+preprocess/*

@@ -44,6 +44,33 @@ class FusionTransformer(nn.Module):
         self.apply(_init_vit_weights)
 
     def forward(self, text=None, video=None, audio=None):
+        """
+        Parameters
+        ----------
+        text: dict
+            "all_tokens": torch.Tensor (n_batch, n_token, n_dim)
+                the Tensor that holds the token sequence
+            "attention_mask": torch.Tensor (n_batch, n_token, n_dim)
+                the corresponding attention mask
+        video: dict
+            same keys to text
+        audio: dict
+            same keys to text
+
+        Returns
+        -------
+        output: dict
+            "text": dict
+                "all_tokens": torch.Tensor (n_batch, n_token, n_dim)
+                "attention_mask": torch.Tensor (n_batch, n_token, n_dim)
+                "embed": torch.Tensor (n_batch, n_dim)
+                    The modality's embedding vector
+            "video": dict
+                same keys to "text"
+            "audio": dict
+                same keys to "text"
+        """
+
         # concatenate tokens
         data = [text, video, audio]
         tokens = [x['all_tokens'] for x in data if x is not None]
@@ -63,6 +90,7 @@ class FusionTransformer(nn.Module):
             tokens_mask = torch.cat((cls_token_mask, tokens_mask), dim=1)
             offset = 1
 
+        # actual forward process
         for block in self.blocks:
             tokens = block(tokens, attention_mask=tokens_mask)
 
