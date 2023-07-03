@@ -1,20 +1,24 @@
 import os
+import sys
 import csv
 import math
 import glob
 import torch
+import shutil
 import argparse
 import numpy as np
 import torch.nn.functional as F
+from tqdm import tqdm
 from torch.utils.data import DataLoader
 
-from preprocess.AVLnet import audio_to_spectrograms as audio
-from preprocess.video_feature_extractor.video_loader import VideoLoader
-from preprocess.video_feature_extractor.random_sequence_shuffler import (
+sys.path.append("..")
+from everything_at_once.preprocess.AVLnet import audio_to_spectrograms as audio
+from everything_at_once.preprocess.video_feature_extractor.video_loader import VideoLoader
+from everything_at_once.preprocess.video_feature_extractor.random_sequence_shuffler import (
     RandomSequenceSampler,
 )
-from preprocess.video_feature_extractor.preprocessing import Preprocessing
-from preprocess.video_feature_extractor.model import get_model
+from everything_at_once.preprocess.video_feature_extractor.preprocessing import Preprocessing
+from everything_at_once.preprocess.video_feature_extractor.model import get_model
 
 
 def process_soundaction(args):
@@ -30,14 +34,21 @@ def process_soundaction(args):
         videos = videos[:2]
     print(f"=> Found {len(videos)} mp4 files")
     videos = [os.path.abspath(video) for video in videos]
-    features = [os.path.abspath(
-        os.path.join(
-            args.output_path, 
-            os.path.split(video)[-1].replace(".mp4", ".npy").replace(".", f"_{args.type}.")
+    features = [
+        os.path.abspath(
+            os.path.join(
+                os.path.join(args.output_path, "video_features"),
+                os.path.split(video)[-1]
+                .replace(".mp4", ".npy")
+                .replace(".", f"_{args.type}."),
+            )
         )
-    ) for video in videos]
-    csv_path = os.path.join(args.output_path, os.path.split(args.data_path)[-1]+".csv")
-    os.makedirs(args.output_path, exist_ok=True)
+        for video in videos
+    ]
+    csv_path = os.path.join(
+        args.output_path, os.path.split(args.data_path)[-1] + ".csv"
+    )
+    os.makedirs(os.path.join(args.output_path, "video_features"), exist_ok=True)
     with open(csv_path, "w") as f:
         write = csv.writer(f)
         write.writerow(["video_path", "feature_path"])
@@ -96,6 +107,37 @@ def process_soundaction(args):
             else:
                 print("Video {} already processed.".format(input_file))
 
+        ### process audio
+        audio_dir = os.path.join(args.output_path, "audio_features")
+        audio_tmp_dir = os.path.join(args.output_path, "audio_features/tmp")
+        os.makedirs(audio_tmp_dir, exist_ok=True)
+
+        for video_path in tqdm(videos):
+            audio_path = os.path.join(
+                audio_tmp_dir, os.path.split(video_path)[-1].replace(".mp4", ".wav")
+            )
+            log_path = os.path.join(
+                audio_tmp_dir, os.path.split(video_path)[-1].replace(".mp4", ".log")
+            )
+            audio.extract_audio(video_path, audio_path, None)
+            audio.stereo_to_mono_downsample(
+                audio_path, audio_path.replace(".wav", "_mono.wav"), 16000
+            )
+            audio_features, n_frames = audio.LoadAudio(
+                audio_path.replace(".wav", "_mono.wav")
+            )
+            if args.half_precision:
+                audio_features = audio_features.astype("float16")
+
+            np.save(
+                os.path.join(
+                    audio_dir, os.path.split(video_path)[-1].replace(".mp4", ".npy")
+                ),
+                audio_features,
+            )
+
+        shutil.rmtree(audio_tmp_dir)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Easy video feature extractor")
@@ -104,19 +146,19 @@ if __name__ == "__main__":
         "--data_path",
         type=str,
         help="path for original video files",
-        default="/home/jinyueg/felles/Research/Project/AMBIENT/Datasets/SoundActions/video-HD"
+        default="/home/jinyueg/felles/Research/Project/AMBIENT/Datasets/SoundActions/video-HD",
     )
     parser.add_argument(
         "--output_path",
         type=str,
         help="path for output csv file and feature npy files",
-        default="/home/jinyueg/felles/Research/Users/jinyueg/SoundAction/everything_at_once/data/SoundActions"
+        default="/home/jinyueg/felles/Research/Users/jinyueg/SoundAction/everything_at_once/data/SoundActions",
     )
 
     parser.add_argument("--batch_size", type=int, default=64, help="batch size")
     parser.add_argument("--type", type=str, default="2d", help="CNN type")
     parser.add_argument(
-        "--half_precision", type=int, default=1, help="output half precision float"
+        "--half_precision", type=int, default=0, help="output half precision float"
     )
     parser.add_argument(
         "--num_decoding_thread",
@@ -138,6 +180,5 @@ if __name__ == "__main__":
         action="store_true",
     )
     args = parser.parse_args()
-
 
     process_soundaction(args)

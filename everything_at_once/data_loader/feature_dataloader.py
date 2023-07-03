@@ -1,10 +1,11 @@
-import pickle
+from __future__ import absolute_import
+
 from gensim.models.keyedvectors import KeyedVectors
 
 from everything_at_once.base import BaseDataLoaderExplicitSplit
 
 from everything_at_once.dataset import HowTo_Dataset, MSRVTT_Dataset, Youcook_Dataset, \
-    CrossTaskMiningYoutubeDataset
+    CrossTaskMiningYoutubeDataset, SoundActionsDataset
 
 
 caption = None
@@ -48,6 +49,8 @@ class FeatureDataloader(BaseDataLoaderExplicitSplit):
         elif 'MiningYoutube' in dataset_name:
             assert batch_size == 1
             dataset = CrossTaskMiningYoutubeDataset(**dataset_kwargs, we=we, mining_youtube=True)
+        elif "SoundActions" in dataset_name:
+            dataset = SoundActionsDataset(**dataset_kwargs, we=we)
         else:
             raise NotImplementedError(f"Dataset: {dataset_name} not found.")
 
