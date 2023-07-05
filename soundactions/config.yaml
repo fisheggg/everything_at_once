@@ -4,7 +4,6 @@ arch:
   args:
     video_embed_dim: 4096
     text_embed_dim: 300
-
     davenet_v2: true
     strategy_audio_pooling: 'none'
     token_projection: 'gated'
@@ -19,58 +18,21 @@ arch:
     projection_dim: 6144
     projection: 'gated'
 
-
 data_loader:
   type: FeatureDataloader
   args:
-    num_workers: 70
-    batch_size: 224
-    shuffle: true
+    num_workers: 4
+    batch_size: 16
+    shuffle: false
     drop_last: true
-    dataset_name: 'HowTo100M'
+    dataset_name: 'SoundActions'
     dataset_kwargs:
-      flag_text_audio_misaligned: true
-      csv: './data/howto/HowTo100M_1166_videopaths.txt'
-      features_path: './data/howto/features'
-      features_path_audio: './data/howto/audio_features'
-      n_video_tokens: 12
-      min_time: 8.0
-      max_words: 20
-      we_dim: 300
-      n_clips: 10
-      num_audio_STFT_frames: 768
-      caption_path: './data/howto/caption.pickle'
-      word2vec_path: './data/GoogleNews-vectors-negative300.bin'
-
-val_data_loaders:
-  - type: FeatureDataloader
-    args:
-      num_workers: 8
-      batch_size: 8
-      shuffle: false
-      dataset_name: 'MSRVTT'
-
-      dataset_kwargs:
-        data_path: './data/msrvtt/resnet/msrvtt_jsfusion_test.pkl'
-        max_words: 20
-        training: false
-        n_video_tokens: 48
-        num_audio_STFT_frames: 3072
-        word2vec_path: './data/GoogleNews-vectors-negative300.bin'
-
-  - type: FeatureDataloader
-    args:
-      num_workers: 16
-      batch_size: 16
-      shuffle: false
-      dataset_name: 'YouCook2'
-
-      dataset_kwargs:
-        data_path: './data/youcook/resnet/youcook_val.pkl'
-        max_words: 20
-        n_video_tokens: 72
-        num_audio_STFT_frames: 4608
-        word2vec_path: './data/GoogleNews-vectors-negative300.bin'
+      word2vec_path: '/fp/homes01/u01/ec-jinyueg/felles/Research/Users/jinyueg/SoundAction/everything_at_once/data/GoogleNews/GoogleNews-vectors-negative300.bin'
+      video_feature_path: '/fp/homes01/u01/ec-jinyueg/felles/Research/Users/jinyueg/SoundAction/everything_at_once/data/SoundActions/video_features'
+      audio_feature_path: '/fp/homes01/u01/ec-jinyueg/felles/Research/Users/jinyueg/SoundAction/everything_at_once/data/SoundActions/audio_features'
+      use_2D: true
+      use_3D: false
+      debug: true
 
 optimizer:
   type: Adam

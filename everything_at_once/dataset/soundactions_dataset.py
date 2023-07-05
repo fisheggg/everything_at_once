@@ -32,9 +32,11 @@ class SoundActionsDataset(Dataset):
         n_clips=1,
         use_2D=True,
         use_3D=True,
-        device="cpu",
+        debug=False,
     ):
         self.audio_data = glob.glob(os.path.join(audio_feature_path, '*.npy'))
+        self.video_data_2d = None
+        self.video_data_3d = None
         if use_2D:
             self.video_data_2d = glob.glob(os.path.join(video_feature_path, '*_2d.npy'))
             assert len(self.audio_data) == len(self.video_data_2d)
@@ -48,6 +50,16 @@ class SoundActionsDataset(Dataset):
             self.text.append(data.split(" - ")[-1].split("_hd")[0])
             self.id.append(data.split(" - ")[0].split("_")[-1])
 
+        if debug:
+            logging.info("Debug mode: using only 2 samples.")
+            self.audio_data = self.audio_data[:2]
+            if self.video_data_2d is not None:
+                self.video_data_2d = self.video_data_2d[:2]
+            if self.video_data_3d is not None:
+                self.video_data_3d = self.video_data_3d[:2]
+            self.text = self.text[:2]
+            self.id = self.id[:2]
+
         self.we = we
         self.we_dim = we_dim
         self.max_words = max_words
@@ -59,7 +71,6 @@ class SoundActionsDataset(Dataset):
         self.n_clips = n_clips
         self.use_2d = use_2D
         self.use_3d = use_3D
-        self.device = device
 
         if not self.cut_clips:
             assert n_clips == 1
@@ -80,9 +91,9 @@ class SoundActionsDataset(Dataset):
         feat_2d = None
         feat_3d = None
         if self.use_2d:
-            feat_2d = torch.from_numpy(np.load(self.video_data_2d[idx])).to(self.device)
+            feat_2d = torch.from_numpy(np.load(self.video_data_2d[idx]))
         if self.use_3d:
-            feat_3d = torch.from_numpy(np.load(self.video_data_3d[idx])).to(self.device)
+            feat_3d = torch.from_numpy(np.load(self.video_data_3d[idx]))
         target_nvideo_tokens = self.n_video_tokens * self.n_clips
         video, video_mask = create_video_features(
             feat_2d, feat_3d, target_nvideo_tokens,
@@ -90,7 +101,7 @@ class SoundActionsDataset(Dataset):
             )
 
         # load audio features
-        feat_audio = torch.from_numpy(np.load(self.audio_data[idx])).to(self.device)
+        feat_audio = torch.from_numpy(np.load(self.audio_data[idx]))
         max_audio_STFT_nframes = self.num_audio_STFT_frames * self.n_clips
         audio, audio_mask, audio_STFT_nframes = create_audio_features(feat_audio, max_audio_STFT_nframes)
         

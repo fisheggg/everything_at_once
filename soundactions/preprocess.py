@@ -13,11 +13,15 @@ from torch.utils.data import DataLoader
 
 sys.path.append("..")
 from everything_at_once.preprocess.AVLnet import audio_to_spectrograms as audio
-from everything_at_once.preprocess.video_feature_extractor.video_loader import VideoLoader
+from everything_at_once.preprocess.video_feature_extractor.video_loader import (
+    VideoLoader,
+)
 from everything_at_once.preprocess.video_feature_extractor.random_sequence_shuffler import (
     RandomSequenceSampler,
 )
-from everything_at_once.preprocess.video_feature_extractor.preprocessing import Preprocessing
+from everything_at_once.preprocess.video_feature_extractor.preprocessing import (
+    Preprocessing,
+)
 from everything_at_once.preprocess.video_feature_extractor.model import get_model
 
 
