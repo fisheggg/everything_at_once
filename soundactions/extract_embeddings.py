@@ -1,6 +1,7 @@
 """extract embeddings for sound action datasets
 modified from test.py
 """
+import os
 import sys
 import tqdm
 import torch
@@ -47,9 +48,21 @@ def run():
     model = config.initialize("arch", module_arch)
 
     # setup data_loader instances
-    logging.debug(f"config: {config['data_loader']}")
-    data_loader = config.initialize("data_loader", module_data)
-    logging.debug(f"dataloader length: {len(data_loader)}")
+    # logging.debug(f"config: {config['data_loader']}")
+    # data_loader = config.initialize("data_loader", module_data)
+    data_loader = module_data.FeatureDataloader(
+        "SoundActions",
+        batch_size=1,
+        dataset_kwargs={
+            "word2vec_path": "/fp/homes01/u01/ec-jinyueg/felles/Research/Users/jinyueg/SoundAction/everything_at_once/data/GoogleNews/GoogleNews-vectors-negative300.bin",
+            "video_feature_path": "/fp/homes01/u01/ec-jinyueg/felles/Research/Users/jinyueg/SoundAction/everything_at_once/data/SoundActions/video_features",
+            "audio_feature_path": "/fp/homes01/u01/ec-jinyueg/felles/Research/Users/jinyueg/SoundAction/everything_at_once/data/SoundActions/audio_features",
+            "use_2D": True,
+            "use_3D": True,
+            "debug": False,
+        },
+    )
+    logging.debug(f"dataloader size: {len(data_loader)}")
 
     logging.info(f"Loading model")
     checkpoint = torch.load(config.resume)
@@ -67,12 +80,13 @@ def run():
     model.eval()
 
     # run through data to get embeddings
-    embed_arr = collections.defaultdict(lambda: [])
+    # embed_arr = collections.defaultdict(lambda: [])
+    logging.info(f"Extracting embeddings")
+    output_dir = "/fp/homes01/u01/ec-jinyueg/felles/Research/Users/jinyueg/SoundAction/everything_at_once/data/SoundActions/embeddings"
+    os.makedirs(output_dir, exist_ok=True)
     with torch.no_grad():
-        # for data in tqdm.tqdm(data_loader):
-        for data in data_loader:
+        for data in tqdm.tqdm(data_loader):
             data = format_dataloader_output(data)
-            logging.debug(f"data: {data}")
 
             if clip_text_model is not None:
                 data = _apply_clip_text_model(clip_text_model, data, device)
@@ -93,11 +107,7 @@ def run():
 
             # get embeddings
             embeds = model(data, force_cross_modal=True)
-            for name, embed in embeds.items():
-                if "_embed" in name:
-                    embed_arr[name].append(embed.cpu())
-
-    logging.debug(f"embed_arr: {embed_arr}")
+            torch.save(embeds, os.path.join(output_dir, f"{data['meta']['ids'][0]}.pt"))
 
 
 if __name__ == "__main__":

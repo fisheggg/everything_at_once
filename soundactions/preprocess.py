@@ -111,36 +111,36 @@ def process_soundaction(args):
             else:
                 print("Video {} already processed.".format(input_file))
 
-        ### process audio
-        audio_dir = os.path.join(args.output_path, "audio_features")
-        audio_tmp_dir = os.path.join(args.output_path, "audio_features/tmp")
-        os.makedirs(audio_tmp_dir, exist_ok=True)
+        # ### process audio
+        # audio_dir = os.path.join(args.output_path, "audio_features")
+        # audio_tmp_dir = os.path.join(args.output_path, "audio_features/tmp")
+        # os.makedirs(audio_tmp_dir, exist_ok=True)
 
-        for video_path in tqdm(videos):
-            audio_path = os.path.join(
-                audio_tmp_dir, os.path.split(video_path)[-1].replace(".mp4", ".wav")
-            )
-            log_path = os.path.join(
-                audio_tmp_dir, os.path.split(video_path)[-1].replace(".mp4", ".log")
-            )
-            audio.extract_audio(video_path, audio_path, None)
-            audio.stereo_to_mono_downsample(
-                audio_path, audio_path.replace(".wav", "_mono.wav"), 16000
-            )
-            audio_features, n_frames = audio.LoadAudio(
-                audio_path.replace(".wav", "_mono.wav")
-            )
-            if args.half_precision:
-                audio_features = audio_features.astype("float16")
+        # for video_path in tqdm(videos):
+        #     audio_path = os.path.join(
+        #         audio_tmp_dir, os.path.split(video_path)[-1].replace(".mp4", ".wav")
+        #     )
+        #     log_path = os.path.join(
+        #         audio_tmp_dir, os.path.split(video_path)[-1].replace(".mp4", ".log")
+        #     )
+        #     audio.extract_audio(video_path, audio_path, None)
+        #     audio.stereo_to_mono_downsample(
+        #         audio_path, audio_path.replace(".wav", "_mono.wav"), 16000
+        #     )
+        #     audio_features, n_frames = audio.LoadAudio(
+        #         audio_path.replace(".wav", "_mono.wav")
+        #     )
+        #     if args.half_precision:
+        #         audio_features = audio_features.astype("float16")
 
-            np.save(
-                os.path.join(
-                    audio_dir, os.path.split(video_path)[-1].replace(".mp4", ".npy")
-                ),
-                audio_features,
-            )
+        #     np.save(
+        #         os.path.join(
+        #             audio_dir, os.path.split(video_path)[-1].replace(".mp4", ".npy")
+        #         ),
+        #         audio_features,
+        #     )
 
-        shutil.rmtree(audio_tmp_dir)
+        # shutil.rmtree(audio_tmp_dir)
 
 
 if __name__ == "__main__":
@@ -150,13 +150,13 @@ if __name__ == "__main__":
         "--data_path",
         type=str,
         help="path for original video files",
-        default="/home/jinyueg/felles/Research/Project/AMBIENT/Datasets/SoundActions/video-HD",
+        default="/fp/homes01/u01/ec-jinyueg/felles/Research/Project/AMBIENT/Datasets/SoundActions/video-HD",
     )
     parser.add_argument(
         "--output_path",
         type=str,
         help="path for output csv file and feature npy files",
-        default="/home/jinyueg/felles/Research/Users/jinyueg/SoundAction/everything_at_once/data/SoundActions",
+        default="/fp/homes01/u01/ec-jinyueg/felles/Research/Users/jinyueg/SoundAction/everything_at_once/data/SoundActions",
     )
 
     parser.add_argument("--batch_size", type=int, default=64, help="batch size")
@@ -176,7 +176,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--resnext101_model_path",
         type=str,
-        default="model/resnext101.pth",
+        default="../pretrained_models/AVLnet_release/resnext101.pth",
         help="Resnext model path",
     )
     parser.add_argument(
